@@ -16,20 +16,24 @@
       display: flex;
       align-items: center;
     }
+    /* 滿版 1080p 黑色橫條 */
     .bar {
-      display: inline-flex;
+      width: 1080px;
+      height: 54px;
+      display: flex;
       align-items: center;
+      justify-content: center;
       background: rgba(0, 0, 0, 0.75);
-      padding: 6px 18px;
-      border-radius: 4px;
       font-size: 24px;
       font-weight: 600;
       white-space: nowrap;
     }
+    /* 即時時間（帶秒數） */
     .time {
       color: #38ef7d;
       font-weight: 700;
-      margin-right: 15px;
+      font-variant-numeric: tabular-nums;
+      margin-right: 18px;
     }
     .date {
       color: #FFFFFF;
@@ -38,20 +42,21 @@
     .weather-item {
       display: inline-flex;
       align-items: center;
-      margin-right: 15px;
+      margin-right: 18px;
+      font-variant-numeric: tabular-nums;
     }
     /* 一般天氣圖示（picXX.png） */
     .weather-icon {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       vertical-align: middle;
       margin-left: 6px;
       object-fit: contain;
     }
-    /* 警告圖示（對應全部警告 png） */
+    /* 天氣警告圖示（全部 .png） */
     .warning-icon {
-      width: 34px;
-      height: 34px;
+      width: 36px;
+      height: 36px;
       vertical-align: middle;
       margin-left: 10px;
       object-fit: contain;
@@ -61,7 +66,7 @@
 </head>
 <body>
   <div class="bar">
-    <span id="time" class="time">--:--</span>
+    <span id="time" class="time">--:--:--</span>
     <span id="date" class="date">----年--月--日 (--)</span>
     <span class="weather-item"><span id="temp">--</span>&#176;C</span>
     <span class="weather-item"><span id="humidity">--</span>%</span>
@@ -71,20 +76,21 @@
       <img id="icon" class="weather-icon" src="" style="display:none;" />
     </span>
 
-    <!-- 天氣警告圖示（生效時自動浮現，平時隱藏） -->
+    <!-- 天氣警告圖示（有警告自動浮現，平時隱藏） -->
     <img id="warning-icon" class="warning-icon" src="" style="display:none;" />
   </div>
 
   <script>
-    // 備用天氣圖示（SVG 太陽多雲，防破圖保險）
+    // 備用天氣圖示（防破圖保險 SVG）
     const FALLBACK_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='26' cy='26' r='12' fill='%23FFA500'/%3E%3Cpath d='M46 44a10 10 0 0 0-1.8-19.8 14 14 0 0 0-26.4 5.8A9 9 0 0 0 18 44h28z' fill='%23FFFFFF' opacity='0.9'/%3E%3C/svg%3E";
 
-    // 1. 本地即時時間更新（每秒）
+    // 1. 本地即時時間更新（含秒數，每秒刷新）
     function updateClock() {
       const now = new Date();
       const h = String(now.getHours()).padStart(2, '0');
       const m = String(now.getMinutes()).padStart(2, '0');
-      document.getElementById('time').innerText = h + ':' + m;
+      const s = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('time').innerText = h + ':' + m + ':' + s;
 
       const year = now.getFullYear();
       const month = now.getMonth() + 1;
@@ -95,7 +101,7 @@
 
     let weatherSuccess = false;
 
-    // 2. 獲取溫濕度與一般天氣圖示 (自動加載 pic50.png ~ pic93.png)
+    // 2. 獲取溫濕度與一般天氣圖示 (自動載入同目錄 picXX.png)
     async function fetchWeather() {
       try {
         const timestamp = new Date().getTime();
@@ -116,7 +122,7 @@
           document.getElementById('humidity').innerText = data.humidity.data[0].value;
         }
 
-        // 一般天氣圖示（直接讀取同目錄的 ./picXX.png）
+        // 一般天氣圖示（讀取 ./picXX.png）
         const img = document.getElementById('icon');
         if (data.icon && Array.isArray(data.icon) && data.icon.length > 0) {
           const iconId = data.icon[0];
@@ -137,7 +143,7 @@
       }
     }
 
-    // 3. 獲取即時天氣警告（100% 精準對齊 50 個 png 檔名）
+    // 3. 獲取即時天氣警告（精確對應 Repo 內 50 張 .png）
     async function fetchWarnings() {
       try {
         const timestamp = new Date().getTime();
@@ -214,7 +220,7 @@
 
           if (warnSrc) {
             warnImg.onerror = function() {
-              this.style.display = 'none'; // 找不到圖檔時自動隱藏
+              this.style.display = 'none';
             };
             warnImg.src = warnSrc;
             warnImg.style.display = 'inline-block';
@@ -222,7 +228,7 @@
             warnImg.style.display = 'none';
           }
         } else {
-          // 沒有任何警告信號生效時隱藏
+          // 沒有警告信號生效時隱藏
           warnImg.style.display = 'none';
         }
       } catch (e) {
@@ -234,7 +240,7 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    // 開機立即抓取
+    // 載入時立即抓取
     fetchWeather();
     fetchWarnings();
 
