@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="referrer" content="no-referrer">
+  <title>Weather Ticker</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "PingFang HK", sans-serif;
+      color: #FFFFFF;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+    }
+    .bar {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 6px 18px;
+      border-radius: 4px;
+      font-size: 24px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .time {
+      color: #38ef7d;
+      font-weight: 700;
+      margin-right: 15px;
+    }
+    .date {
+      color: #FFFFFF;
+      margin-right: 20px;
+    }
+    .weather-item {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 15px;
+    }
+    /* 一般天氣圖示（太陽、多雲等） */
+    .weather-icon {
+      width: 32px;
+      height: 32px;
+      vertical-align: middle;
+      margin-left: 6px;
+      object-fit: contain;
+    }
+    /* 天氣警告圖示（黃雨、風球、雷暴等，加強陰影與辨識度） */
+    .warning-icon {
+      width: 34px;
+      height: 34px;
+      vertical-align: middle;
+      margin-left: 10px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span id="time" class="time">--:--</span>
+    <span id="date" class="date">----年--月--日 (--)</span>
+    <span class="weather-item"><span id="temp">--</span>&#176;C</span>
+    <span class="weather-item"><span id="humidity">--</span>%</span>
+    
+    <!-- 一般天氣圖示 -->
+    <span class="weather-item">
+      <img id="icon" class="weather-icon" src="" style="display:none;" />
+    </span>
+
+    <!-- 天氣警告圖示（有警告時自動浮現，平時隱藏） -->
+    <img id="warning-icon" class="warning-icon" src="" style="display:none;" />
+  </div>
+
+  <script>
+    // 備用天氣圖示（防破圖保險 SVG）
+    const FALLBACK_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='26' cy='26' r='12' fill='%23FFA500'/%3E%3Cpath d='M46 44a10 10 0 0 0-1.8-19.8 14 14 0 0 0-26.4 5.8A9 9 0 0 0 18 44h28z' fill='%23FFFFFF' opacity='0.9'/%3E%3C/svg%3E";
+
+    // 1. 本地即時時間更新
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('time').innerText = h + ':' + m;
+
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      const dayArr = ['\u65e5', '\u4e00', '\u4e8c', '\u4e09', '\u56db', '\u4e94', '\u516d'];
+      document.getElementById('date').innerText = year + '\u5e74' + month + '\u6708' + day + '\u65e5 (' + dayArr[now.getDay()] + ')';
+    }
+
+    let weatherSuccess = false;
+
+    // 2. 獲取溫濕度與一般天氣圖示
+    async function fetchWeather() {
+      try {
+        const timestamp = new Date().getTime();
+        const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc&_t=' + timestamp, {
+          cache: 'no-store'
+        });
+        if (!res.ok) throw new Error('Weather API error');
+        const data = await res.json();
+
+        // 更新溫度
+        if (data.temperature && data.temperature.data && data.temperature.data.length > 0) {
+          const hko = data.temperature.data.find(d => d.place === '\u9999\u6e2f\u5929\u6587\u53f0') || data.temperature.data[0];
+          document.getElementById('temp').innerText = hko.value;
+        }
+
+        // 更新濕度
+        if (data.humidity && data.humidity.data && data.humidity.data.length > 0) {
+          document.getElementById('humidity').innerText = data.humidity.data[0].value;
+        }
+
+        // 更新一般天氣圖示（直接讀取 GitHub Pages 根目錄的圖片）
+        const img = document.getElementById('icon');
+        if (data.icon && Array.isArray(data.icon) && data.icon.length > 0) {
+          const iconId = data.icon[0];
+          img.onerror = function() {
+            this.onerror = null;
+            this.src = FALLBACK_ICON; // 找不到圖檔時優雅切換為內建太陽雲
+          };
+          img.src = './pic' + iconId + '.png';
+          img.style.display = 'inline-block';
+        }
+
+        weatherSuccess = true;
+      } catch (e) {
+        console.warn('Weather fetch waiting...', e);
+        if (!weatherSuccess) {
+          setTimeout(fetchWeather, 3000); // 剛開機未聯網時每 3 秒快速重試
+        }
+      }
+    }
+
+    // 3. 獲取即時生效中的天氣警告（暴雨 / 風球 / 雷暴等）
+    async function fetchWarnings() {
+      try {
+        const timestamp = new Date().getTime();
+        const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc&_t=' + timestamp, {
+          cache: 'no-store'
+        });
+        if (!res.ok) throw new Error('Warning API error');
+        const warnData = await res.json();
+        const warnImg = document.getElementById('warning-icon');
+
+        if (!warnImg) return;
+
+        // 若天文台有任何警告正在生效
+        if (warnData && Object.keys(warnData).length > 0) {
+          let warnSrc = '';
+
+          // 暴雨警告（黑雨 > 紅雨 > 黃雨）
+          if (warnData.WRAIN) {
+            const rainCode = warnData.WRAIN.code;
+            if (rainCode === 'WRAINB') warnSrc = './warn_black.png';
+            else if (rainCode === 'WRAINR') warnSrc = './warn_red.png';
+            else warnSrc = './warn_amber.png';
+          }
+          // 熱帶氣旋警告（風球）
+          else if (warnData.WTCSGNL) {
+            const tcCode = warnData.WTCSGNL.code;
+            if (tcCode.startsWith('TC8')) warnSrc = './warn_tc8.png';
+            else if (tcCode === 'TC3') warnSrc = './warn_tc3.png';
+            else warnSrc = './warn_tc1.png';
+          }
+          // 雷暴警告
+          else if (warnData.WTHDR) {
+            warnSrc = './warn_ts.png';
+          }
+          // 酷熱天氣警告
+          else if (warnData.VHOT) {
+            warnSrc = './warn_vhot.png';
+          }
+          // 寒冷天氣警告
+          else if (warnData.COLD) {
+            warnSrc = './warn_cold.png';
+          }
+
+          if (warnSrc) {
+            warnImg.onerror = function() {
+              this.style.display = 'none'; // 圖檔缺失時不顯示破圖白框
+            };
+            warnImg.src = warnSrc;
+            warnImg.style.display = 'inline-block';
+          } else {
+            warnImg.style.display = 'none';
+          }
+        } else {
+          // 沒有任何警告信號生效時隱藏
+          warnImg.style.display = 'none';
+        }
+      } catch (e) {
+        console.warn('Warning fetch error:', e);
+      }
+    }
+
+    // 啟動定時器
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // 載入時立即抓取
+    fetchWeather();
+    fetchWarnings();
+
+    // 每 30 秒自動向天文台請求最新資料
+    setInterval(() => {
+      fetchWeather();
+      fetchWarnings();
+    }, 30000);
+  </script>
+</body>
+</html>
