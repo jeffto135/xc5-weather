@@ -40,7 +40,7 @@
       align-items: center;
       margin-right: 15px;
     }
-    /* 一般天氣圖示（太陽、多雲等） */
+    /* 一般天氣圖示（picXX.png） */
     .weather-icon {
       width: 32px;
       height: 32px;
@@ -48,7 +48,7 @@
       margin-left: 6px;
       object-fit: contain;
     }
-    /* 天氣警告圖示（黃雨、風球、雷暴等，加強陰影與辨識度） */
+    /* 警告圖示（全改為 .png） */
     .warning-icon {
       width: 34px;
       height: 34px;
@@ -71,12 +71,12 @@
       <img id="icon" class="weather-icon" src="" style="display:none;" />
     </span>
 
-    <!-- 天氣警告圖示（有警告時自動浮現，平時隱藏） -->
+    <!-- 天氣警告圖示（有警告自動顯示 .png，無警告自動隱藏） -->
     <img id="warning-icon" class="warning-icon" src="" style="display:none;" />
   </div>
 
   <script>
-    // 備用天氣圖示（防破圖保險 SVG）
+    // 備用天氣圖示（SVG 太陽多雲，防破圖保險）
     const FALLBACK_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='26' cy='26' r='12' fill='%23FFA500'/%3E%3Cpath d='M46 44a10 10 0 0 0-1.8-19.8 14 14 0 0 0-26.4 5.8A9 9 0 0 0 18 44h28z' fill='%23FFFFFF' opacity='0.9'/%3E%3C/svg%3E";
 
     // 1. 本地即時時間更新
@@ -95,7 +95,7 @@
 
     let weatherSuccess = false;
 
-    // 2. 獲取溫濕度與一般天氣圖示
+    // 2. 獲取溫濕度與一般天氣圖示 (picXX.png)
     async function fetchWeather() {
       try {
         const timestamp = new Date().getTime();
@@ -105,24 +105,24 @@
         if (!res.ok) throw new Error('Weather API error');
         const data = await res.json();
 
-        // 更新溫度
+        // 溫度
         if (data.temperature && data.temperature.data && data.temperature.data.length > 0) {
           const hko = data.temperature.data.find(d => d.place === '\u9999\u6e2f\u5929\u6587\u53f0') || data.temperature.data[0];
           document.getElementById('temp').innerText = hko.value;
         }
 
-        // 更新濕度
+        // 濕度
         if (data.humidity && data.humidity.data && data.humidity.data.length > 0) {
           document.getElementById('humidity').innerText = data.humidity.data[0].value;
         }
 
-        // 更新一般天氣圖示（直接讀取 GitHub Pages 根目錄的圖片）
+        // 一般天氣圖示（讀取 ./picXX.png）
         const img = document.getElementById('icon');
         if (data.icon && Array.isArray(data.icon) && data.icon.length > 0) {
           const iconId = data.icon[0];
           img.onerror = function() {
             this.onerror = null;
-            this.src = FALLBACK_ICON; // 找不到圖檔時優雅切換為內建太陽雲
+            this.src = FALLBACK_ICON;
           };
           img.src = './pic' + iconId + '.png';
           img.style.display = 'inline-block';
@@ -137,7 +137,7 @@
       }
     }
 
-    // 3. 獲取即時生效中的天氣警告（暴雨 / 風球 / 雷暴等）
+    // 3. 獲取即時天氣警告（全對應 .png 圖檔）
     async function fetchWarnings() {
       try {
         const timestamp = new Date().getTime();
@@ -154,36 +154,46 @@
         if (warnData && Object.keys(warnData).length > 0) {
           let warnSrc = '';
 
-          // 暴雨警告（黑雨 > 紅雨 > 黃雨）
+          // 暴雨警告（對應 raina.png, rainr.png, rainb.png）
           if (warnData.WRAIN) {
             const rainCode = warnData.WRAIN.code;
-            if (rainCode === 'WRAINB') warnSrc = './warn_black.png';
-            else if (rainCode === 'WRAINR') warnSrc = './warn_red.png';
-            else warnSrc = './warn_amber.png';
+            if (rainCode === 'WRAINB') warnSrc = './rainb.png';
+            else if (rainCode === 'WRAINR') warnSrc = './rainr.png';
+            else warnSrc = './raina.png';
           }
-          // 熱帶氣旋警告（風球）
+          // 熱帶氣旋警告（風球：tc1.png, tc3.png, tc8ne.png, tc8se.png, tc8nw.png, tc8sw.png, tc9.png, tc10.png）
           else if (warnData.WTCSGNL) {
             const tcCode = warnData.WTCSGNL.code;
-            if (tcCode.startsWith('TC8')) warnSrc = './warn_tc8.png';
-            else if (tcCode === 'TC3') warnSrc = './warn_tc3.png';
-            else warnSrc = './warn_tc1.png';
+            if (tcCode === 'TC1') warnSrc = './tc1.png';
+            else if (tcCode === 'TC3') warnSrc = './tc3.png';
+            else if (tcCode === 'TC8NE') warnSrc = './tc8ne.png';
+            else if (tcCode === 'TC8SE') warnSrc = './tc8se.png';
+            else if (tcCode === 'TC8NW') warnSrc = './tc8nw.png';
+            else if (tcCode === 'TC8SW') warnSrc = './tc8sw.png';
+            else if (tcCode === 'TC9') warnSrc = './tc9.png';
+            else if (tcCode === 'TC10') warnSrc = './tc10.png';
+            else warnSrc = './tc3.png';
           }
-          // 雷暴警告
+          // 雷暴警告（ts.png）
           else if (warnData.WTHDR) {
-            warnSrc = './warn_ts.png';
+            warnSrc = './ts.png';
           }
-          // 酷熱天氣警告
+          // 酷熱天氣警告（vhot.png）
           else if (warnData.VHOT) {
-            warnSrc = './warn_vhot.png';
+            warnSrc = './vhot.png';
           }
-          // 寒冷天氣警告
+          // 寒冷天氣警告（cold.png）
           else if (warnData.COLD) {
-            warnSrc = './warn_cold.png';
+            warnSrc = './cold.png';
+          }
+          // 強烈季候風信號（sms.png）
+          else if (warnData.WMS) {
+            warnSrc = './sms.png';
           }
 
           if (warnSrc) {
             warnImg.onerror = function() {
-              this.style.display = 'none'; // 圖檔缺失時不顯示破圖白框
+              this.style.display = 'none'; // 圖檔缺失時不顯示破圖框
             };
             warnImg.src = warnSrc;
             warnImg.style.display = 'inline-block';
@@ -191,7 +201,7 @@
             warnImg.style.display = 'none';
           }
         } else {
-          // 沒有任何警告信號生效時隱藏
+          // 沒有警告信號生效時隱藏
           warnImg.style.display = 'none';
         }
       } catch (e) {
