@@ -25,43 +25,52 @@
       align-items: center;
       justify-content: center;
       background: rgba(0, 0, 0, 0.75);
-      font-size: 34px; /* 字體大幅放大至 34px */
+      font-size: 32px;
       font-weight: 700;
       white-space: nowrap;
+      color: #FFFFFF !important; /* 確保全局文字預設為純白色 */
     }
 
-    /* 跳秒即時時間（加大至 36px） */
+    /* 跳秒即時時間（醒目亮綠色） */
     .time {
-      color: #38ef7d;
-      font-size: 36px;
+      color: #38ef7d !important;
+      font-size: 34px;
       font-weight: 800;
       font-variant-numeric: tabular-nums;
       margin-right: 14px;
     }
 
+    /* 年月日星期（純白） */
     .date {
-      color: #FFFFFF;
+      color: #FFFFFF !important;
       margin-right: 16px;
       font-weight: 600;
     }
 
+    /* 關鍵修復：溫濕度強制鎖死為高亮純白色 */
     .weather-item {
       display: inline-flex;
       align-items: center;
+      color: #FFFFFF !important;
       margin-right: 14px;
+      font-weight: 700;
       font-variant-numeric: tabular-nums;
     }
 
-    /* 一般天氣圖示（加大至 46px） */
+    .weather-item span {
+      color: #FFFFFF !important;
+    }
+
+    /* 一般天氣圖示（44px，垂直居中） */
     .weather-icon {
-      width: 46px;
-      height: 46px;
+      width: 44px;
+      height: 44px;
       vertical-align: middle;
       margin-left: 4px;
       object-fit: contain;
     }
 
-    /* 警告圖示容器（加大至 46px，填滿 55px 高度） */
+    /* 警告圖示容器（雙警告並排） */
     .warning-container {
       display: inline-flex;
       align-items: center;
@@ -70,8 +79,8 @@
     }
 
     .warning-icon {
-      width: 46px;
-      height: 46px;
+      width: 44px;
+      height: 44px;
       vertical-align: middle;
       object-fit: contain;
       filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
