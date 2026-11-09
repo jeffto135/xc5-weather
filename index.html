@@ -16,7 +16,6 @@
       display: flex;
       align-items: center;
     }
-    /* 滿版 1080p 橫條 */
     .bar {
       width: 1080px;
       height: 54px;
@@ -51,7 +50,6 @@
       margin-left: 6px;
       object-fit: contain;
     }
-    /* 警告容器：支援多個警告並列顯示 */
     .warning-container {
       display: inline-flex;
       align-items: center;
@@ -78,7 +76,7 @@
       <img id="icon" class="weather-icon" src="" style="display:none;" />
     </span>
 
-    <!-- 多警告動態容器 -->
+    <!-- 同時容納所有警告圖示 -->
     <span id="warning-container" class="warning-container"></span>
   </div>
 
@@ -103,7 +101,7 @@
 
     async function fetchWeather() {
       try {
-        const timestamp = new Date().getTime();
+        const timestamp = Date.now();
         const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc&_t=' + timestamp, {
           cache: 'no-store'
         });
@@ -138,7 +136,7 @@
 
     async function fetchWarnings() {
       try {
-        const timestamp = new Date().getTime();
+        const timestamp = Date.now();
         const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc&_t=' + timestamp, {
           cache: 'no-store'
         });
@@ -148,76 +146,59 @@
         if (!container) return;
 
         container.innerHTML = '';
+        if (!warnData || Object.keys(warnData).length === 0) return;
 
-        if (!warnData || Object.keys(warnData).length === 0) {
-          return;
-        }
+        const warningFiles = [];
 
-        const iconsToShow = [];
+        // 全面掃描 warnData 的所有鍵名與其 code/type
+        for (const [key, val] of Object.entries(warnData)) {
+          const k = key.toUpperCase();
+          const code = (val.code || '').toUpperCase();
+          const name = (val.name || '').toUpperCase();
 
-        // 1. 風球 (WTCSGNL)
-        if (warnData.WTCSGNL) {
-          const tcCode = warnData.WTCSGNL.code;
-          if (tcCode === 'TC1') iconsToShow.push('./tc1.png');
-          else if (tcCode === 'TC3') iconsToShow.push('./tc3.png');
-          else if (tcCode === 'TC8NE') iconsToShow.push('./tc8ne.png');
-          else if (tcCode === 'TC8NW') iconsToShow.push('./tc8nw.png');
-          else if (tcCode === 'TC8SE') iconsToShow.push('./tc8se.png');
-          else if (tcCode === 'TC8SW') iconsToShow.push('./tc8sw.png');
-          else if (tcCode === 'TC9') iconsToShow.push('./tc9.png');
-          else if (tcCode === 'TC10') iconsToShow.push('./tc10.png');
-          else iconsToShow.push('./tc3.png');
-        }
-
-        // 2. 暴雨 (WRAIN)
-        if (warnData.WRAIN) {
-          const rainCode = warnData.WRAIN.code;
-          if (rainCode === 'WRAINB') iconsToShow.push('./rainb.png');
-          else if (rainCode === 'WRAINR') iconsToShow.push('./rainr.png');
-          else iconsToShow.push('./raina.png');
-        }
-
-        // 3. 海嘯
-        if (warnData.WTSUNAMI) iconsToShow.push('./tsunami-warn.png');
-
-        // 4. 雷暴
-        if (warnData.WTHDR) iconsToShow.push('./ts.png');
-
-        // 5. 新界北部水浸
-        if (warnData.WFNTSA) iconsToShow.push('./ntfl.png');
-
-        // 6. 山泥傾瀉
-        if (warnData.WLANDSLIP) iconsToShow.push('./landslip.png');
-
-        // 7. 強烈季候風（全面掃描所有可能鍵值：SMS, WMS, 或 JSON 字串包含 monsoon）
-        const rawWarnText = JSON.stringify(warnData).toUpperCase();
-        if (warnData.SMS || warnData.WMS || rawWarnText.includes('MONSOON') || rawWarnText.includes('"SMS"') || rawWarnText.includes('"WMS"')) {
-          iconsToShow.push('./sms.png');
-        }
-
-        // 8. 酷熱 / 寒冷
-        if (warnData.VHOT) iconsToShow.push('./vhot.png');
-        if (warnData.COLD) iconsToShow.push('./cold.png');
-
-        // 9. 霜凍
-        if (warnData.WFROST) iconsToShow.push('./frost.png');
-
-        // 10. 火災危險警告（紅 / 黃）
-        if (warnData.WFIRE) {
-          const fireCode = (warnData.WFIRE.code || '').toUpperCase();
-          if (fireCode === 'WFIRER' || rawWarnText.includes('RED') || rawWarnText.includes('WFIRER')) {
-            iconsToShow.push('./firer.png');
-          } else {
-            iconsToShow.push('./firey.png');
+          // 1. 強烈季候風信號 (官方鍵值通常為 WTMW 或 WMS，代碼 SMS)
+          if (k === 'WTMW' || k === 'WMS' || k === 'SMS' || code.includes('SMS') || code.includes('WTMW') || name.includes('MONSOON')) {
+            warningFiles.push('sms.png');
           }
+          // 2. 火災危險警告 (WFIRE)
+          else if (k === 'WFIRE') {
+            if (code === 'WFIRER') warningFiles.push('firer.png');
+            else warningFiles.push('firey.png');
+          }
+          // 3. 熱帶氣旋 (WTCSGNL)
+          else if (k === 'WTCSGNL') {
+            const tc = code.toLowerCase();
+            if (tc) warningFiles.push(tc + '.png');
+          }
+          // 4. 暴雨警告 (WRAIN)
+          else if (k === 'WRAIN') {
+            if (code === 'WRAINB') warningFiles.push('rainb.png');
+            else if (code === 'WRAINR') warningFiles.push('rainr.png');
+            else warningFiles.push('raina.png');
+          }
+          // 5. 雷暴警告 (WTHDR)
+          else if (k === 'WTHDR') {
+            warningFiles.push('ts.png');
+          }
+          // 6. 酷熱 / 寒冷
+          else if (k === 'VHOT') warningFiles.push('vhot.png');
+          else if (k === 'COLD') warningFiles.push('cold.png');
+          // 7. 霜凍
+          else if (k === 'WFROST') warningFiles.push('frost.png');
+          // 8. 山泥傾瀉
+          else if (k === 'WLANDSLIP') warningFiles.push('landslip.png');
+          // 9. 新界北部水浸
+          else if (k === 'WFNTSA') warningFiles.push('ntfl.png');
+          // 10. 海嘯
+          else if (k === 'WTSUNAMI') warningFiles.push('tsunami-warn.png');
         }
 
-        // 移除重複圖示並動態加入 DOM
-        const uniqueIcons = [...new Set(iconsToShow)];
-        uniqueIcons.forEach(src => {
+        // 去除重複並依序加載 .png 圖示
+        const uniqueFiles = [...new Set(warningFiles)];
+        uniqueFiles.forEach(fileName => {
           const img = document.createElement('img');
           img.className = 'warning-icon';
-          img.src = src;
+          img.src = './' + fileName;
           img.onerror = function() { this.style.display = 'none'; };
           container.appendChild(img);
         });
