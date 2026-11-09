@@ -81,12 +81,11 @@
       <img id="icon" class="weather-icon" src="" style="display:none;" />
     </span>
 
-    <!-- 天氣警告容器：天文台出幾個警告，就並排顯示幾多個 -->
+    <!-- 天氣警告容器：所有生效中的警告一列排開 -->
     <span id="warning-container" class="warning-container"></span>
   </div>
 
   <script>
-    // 備用天氣圖示
     const FALLBACK_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='26' cy='26' r='12' fill='%23FFA500'/%3E%3Cpath d='M46 44a10 10 0 0 0-1.8-19.8 14 14 0 0 0-26.4 5.8A9 9 0 0 0 18 44h28z' fill='%23FFFFFF' opacity='0.9'/%3E%3C/svg%3E";
 
     // 1. 本地即時時間更新（含秒數）
@@ -148,7 +147,7 @@
       }
     }
 
-    // 3. 獲取即時天氣警告（支援多警告同時顯示）
+    // 3. 獲取即時天氣警告（支援多警告同時並列 + 相容官方所有鍵值代號）
     async function fetchWarnings() {
       try {
         const timestamp = new Date().getTime();
@@ -160,7 +159,6 @@
         const container = document.getElementById('warning-container');
         if (!container) return;
 
-        // 清空舊圖示
         container.innerHTML = '';
 
         if (!warnData || Object.keys(warnData).length === 0) {
@@ -169,7 +167,7 @@
 
         const iconsToShow = [];
 
-        // 1. 風球
+        // 1. 風球 (WTCSGNL)
         if (warnData.WTCSGNL) {
           const tcCode = warnData.WTCSGNL.code;
           if (tcCode === 'TC1') iconsToShow.push('./tc1.png');
@@ -183,7 +181,7 @@
           else iconsToShow.push('./tc3.png');
         }
 
-        // 2. 暴雨
+        // 2. 暴雨 (WRAIN)
         if (warnData.WRAIN) {
           const rainCode = warnData.WRAIN.code;
           if (rainCode === 'WRAINB') iconsToShow.push('./rainb.png');
@@ -191,36 +189,38 @@
           else iconsToShow.push('./raina.png');
         }
 
-        // 3. 海嘯
+        // 3. 海嘯 (WTSUNAMI)
         if (warnData.WTSUNAMI) iconsToShow.push('./tsunami-warn.png');
 
-        // 4. 雷暴
+        // 4. 雷暴 (WTHDR)
         if (warnData.WTHDR) iconsToShow.push('./ts.png');
 
-        // 5. 新界北部水浸
+        // 5. 新界北部水浸 (WFNTSA)
         if (warnData.WFNTSA) iconsToShow.push('./ntfl.png');
 
-        // 6. 山泥傾瀉
+        // 6. 山泥傾瀉 (WLANDSLIP)
         if (warnData.WLANDSLIP) iconsToShow.push('./landslip.png');
 
-        // 7. 強烈季候風信號
-        if (warnData.WMS) iconsToShow.push('./sms.png');
+        // 7. 強烈季候風信號（兼顧 SMS 與 WMS 兩種回傳格式）
+        if (warnData.SMS || warnData.WMS) {
+          iconsToShow.push('./sms.png');
+        }
 
-        // 8. 酷熱 / 寒冷
+        // 8. 酷熱 / 寒冷 (VHOT / COLD)
         if (warnData.VHOT) iconsToShow.push('./vhot.png');
         if (warnData.COLD) iconsToShow.push('./cold.png');
 
-        // 9. 霜凍
+        // 9. 霜凍 (WFROST)
         if (warnData.WFROST) iconsToShow.push('./frost.png');
 
-        // 10. 火災危險警告（黃 / 紅）
+        // 10. 火災危險警告 (WFIRE)
         if (warnData.WFIRE) {
           const fireCode = warnData.WFIRE.code;
           if (fireCode === 'WFIRER') iconsToShow.push('./firer.png');
           else iconsToShow.push('./firey.png');
         }
 
-        // 動態建立所有正在生效的警告圖示
+        // 渲染所有收集到的圖示
         iconsToShow.forEach(src => {
           const img = document.createElement('img');
           img.className = 'warning-icon';
@@ -238,7 +238,6 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    // 載入時立即抓取
     fetchWeather();
     fetchWarnings();
 
