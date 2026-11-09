@@ -76,7 +76,6 @@
       <img id="icon" class="weather-icon" src="" style="display:none;" />
     </span>
 
-    <!-- 同時容納所有警告圖示 -->
     <span id="warning-container" class="warning-container"></span>
   </div>
 
@@ -150,50 +149,52 @@
 
         const warningFiles = [];
 
-        // 全面掃描 warnData 的所有鍵名與其 code/type
-        for (const [key, val] of Object.entries(warnData)) {
-          const k = key.toUpperCase();
-          const code = (val.code || '').toUpperCase();
-          const name = (val.name || '').toUpperCase();
-
-          // 1. 強烈季候風信號 (官方鍵值通常為 WTMW 或 WMS，代碼 SMS)
-          if (k === 'WTMW' || k === 'WMS' || k === 'SMS' || code.includes('SMS') || code.includes('WTMW') || name.includes('MONSOON')) {
-            warningFiles.push('sms.png');
-          }
-          // 2. 火災危險警告 (WFIRE)
-          else if (k === 'WFIRE') {
-            if (code === 'WFIRER') warningFiles.push('firer.png');
-            else warningFiles.push('firey.png');
-          }
-          // 3. 熱帶氣旋 (WTCSGNL)
-          else if (k === 'WTCSGNL') {
-            const tc = code.toLowerCase();
-            if (tc) warningFiles.push(tc + '.png');
-          }
-          // 4. 暴雨警告 (WRAIN)
-          else if (k === 'WRAIN') {
-            if (code === 'WRAINB') warningFiles.push('rainb.png');
-            else if (code === 'WRAINR') warningFiles.push('rainr.png');
-            else warningFiles.push('raina.png');
-          }
-          // 5. 雷暴警告 (WTHDR)
-          else if (k === 'WTHDR') {
-            warningFiles.push('ts.png');
-          }
-          // 6. 酷熱 / 寒冷
-          else if (k === 'VHOT') warningFiles.push('vhot.png');
-          else if (k === 'COLD') warningFiles.push('cold.png');
-          // 7. 霜凍
-          else if (k === 'WFROST') warningFiles.push('frost.png');
-          // 8. 山泥傾瀉
-          else if (k === 'WLANDSLIP') warningFiles.push('landslip.png');
-          // 9. 新界北部水浸
-          else if (k === 'WFNTSA') warningFiles.push('ntfl.png');
-          // 10. 海嘯
-          else if (k === 'WTSUNAMI') warningFiles.push('tsunami-warn.png');
+        // 1. 強烈季候風信號（官方標準 Key: WMSGNL）
+        if (warnData.WMSGNL || warnData.WMS || warnData.SMS || warnData.WTMW) {
+          warningFiles.push('sms.png');
         }
 
-        // 去除重複並依序加載 .png 圖示
+        // 2. 火災危險警告（紅 / 黃）
+        if (warnData.WFIRE) {
+          const fireCode = (warnData.WFIRE.code || '').toUpperCase();
+          if (fireCode === 'WFIRER') warningFiles.push('firer.png');
+          else warningFiles.push('firey.png');
+        }
+
+        // 3. 熱帶氣旋警告（風球）
+        if (warnData.WTCSGNL) {
+          const tcCode = (warnData.WTCSGNL.code || '').toLowerCase();
+          if (tcCode) warningFiles.push(tcCode + '.png');
+        }
+
+        // 4. 暴雨警告
+        if (warnData.WRAIN) {
+          const rainCode = (warnData.WRAIN.code || '').toUpperCase();
+          if (rainCode === 'WRAINB') warningFiles.push('rainb.png');
+          else if (rainCode === 'WRAINR') warningFiles.push('rainr.png');
+          else warningFiles.push('raina.png');
+        }
+
+        // 5. 雷暴警告
+        if (warnData.WTHDR) warningFiles.push('ts.png');
+
+        // 6. 酷熱 / 寒冷
+        if (warnData.VHOT) warningFiles.push('vhot.png');
+        if (warnData.COLD) warningFiles.push('cold.png');
+
+        // 7. 霜凍警告
+        if (warnData.WFROST) warningFiles.push('frost.png');
+
+        // 8. 山泥傾瀉警告
+        if (warnData.WLANDSLIP) warningFiles.push('landslip.png');
+
+        // 9. 新界北部水浸特別報告
+        if (warnData.WFNTSA) warningFiles.push('ntfl.png');
+
+        // 10. 海嘯警告
+        if (warnData.WTSUNAMI) warningFiles.push('tsunami-warn.png');
+
+        // 渲染所有圖示
         const uniqueFiles = [...new Set(warningFiles)];
         uniqueFiles.forEach(fileName => {
           const img = document.createElement('img');
