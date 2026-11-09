@@ -6,62 +6,75 @@
   <title>Weather Ticker</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: transparent;
-      font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "PingFang HK", sans-serif;
-      color: #FFFFFF;
-      overflow: hidden;
+    html, body {
       width: 100vw;
       height: 100vh;
+      background: transparent;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "PingFang HK", sans-serif;
       display: flex;
       align-items: center;
     }
+
+    /* 鎖死高 55px、寬 1080px 滿版 */
     .bar {
       width: 1080px;
-      height: 54px;
+      height: 55px;
+      line-height: 55px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: rgba(0, 0, 0, 0.75);
-      font-size: 24px;
-      font-weight: 600;
+      font-size: 34px; /* 字體大幅放大至 34px */
+      font-weight: 700;
       white-space: nowrap;
     }
+
+    /* 跳秒即時時間（加大至 36px） */
     .time {
       color: #38ef7d;
-      font-weight: 700;
+      font-size: 36px;
+      font-weight: 800;
       font-variant-numeric: tabular-nums;
-      margin-right: 18px;
+      margin-right: 14px;
     }
+
     .date {
       color: #FFFFFF;
-      margin-right: 20px;
+      margin-right: 16px;
+      font-weight: 600;
     }
+
     .weather-item {
       display: inline-flex;
       align-items: center;
-      margin-right: 18px;
+      margin-right: 14px;
       font-variant-numeric: tabular-nums;
     }
+
+    /* 一般天氣圖示（加大至 46px） */
     .weather-icon {
-      width: 34px;
-      height: 34px;
+      width: 46px;
+      height: 46px;
       vertical-align: middle;
-      margin-left: 6px;
+      margin-left: 4px;
       object-fit: contain;
     }
+
+    /* 警告圖示容器（加大至 46px，填滿 55px 高度） */
     .warning-container {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      margin-left: 8px;
+      gap: 6px;
+      margin-left: 6px;
     }
+
     .warning-icon {
-      width: 34px;
-      height: 34px;
+      width: 46px;
+      height: 46px;
       vertical-align: middle;
       object-fit: contain;
-      filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+      filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
     }
   </style>
 </head>
@@ -149,19 +162,19 @@
 
         const warningFiles = [];
 
-        // 1. 強烈季候風信號（官方標準 Key: WMSGNL）
+        // 1. 強烈季候風信號 (WMSGNL)
         if (warnData.WMSGNL || warnData.WMS || warnData.SMS || warnData.WTMW) {
           warningFiles.push('sms.png');
         }
 
-        // 2. 火災危險警告（紅 / 黃）
+        // 2. 火災危險警告 (WFIRE)
         if (warnData.WFIRE) {
           const fireCode = (warnData.WFIRE.code || '').toUpperCase();
           if (fireCode === 'WFIRER') warningFiles.push('firer.png');
           else warningFiles.push('firey.png');
         }
 
-        // 3. 熱帶氣旋警告（風球）
+        // 3. 熱帶氣旋警告
         if (warnData.WTCSGNL) {
           const tcCode = (warnData.WTCSGNL.code || '').toLowerCase();
           if (tcCode) warningFiles.push(tcCode + '.png');
@@ -194,7 +207,6 @@
         // 10. 海嘯警告
         if (warnData.WTSUNAMI) warningFiles.push('tsunami-warn.png');
 
-        // 渲染所有圖示
         const uniqueFiles = [...new Set(warningFiles)];
         uniqueFiles.forEach(fileName => {
           const img = document.createElement('img');
