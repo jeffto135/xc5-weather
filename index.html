@@ -17,14 +17,14 @@
       justify-content: center;
     }
 
-    /* 鎖死高 55px、寬 1080px，內部所有物件絕對居中對齊 */
+    /* 鎖死高 55px、寬 1080px 滿版居中 */
     .bar {
       width: 1080px;
       height: 55px;
       line-height: 55px;
       display: flex;
       align-items: center;
-      justify-content: center; /* 關鍵：永遠保持左右空白對稱 */
+      justify-content: center;
       background: rgba(0, 0, 0, 0.75);
       font-size: 37px;
       font-weight: 700;
@@ -33,17 +33,17 @@
       padding: 0 10px;
     }
 
-    /* 時間欄位鎖定固定寬度 145px，秒數變化時原地跳動，不影響外部居中位置 */
+    /* 時間區塊：固定寬度 155px，加大右邊距至 28px 拉開與日期的距離 */
     .time {
       display: inline-block;
-      width: 145px;
+      width: 155px;
       text-align: center;
-      color: #4ade47 !important;
+      color: #38ef7d !important;
       font-size: 37px;
       font-weight: 800;
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum";
-      margin-right: 14px;
+      margin-right: 28px; /* 明顯拉開間距 */
       flex-shrink: 0;
     }
 
@@ -51,7 +51,7 @@
     .date {
       display: inline-block;
       color: #FFFFFF !important;
-      margin-right: 16px;
+      margin-right: 18px;
       font-weight: 600;
       flex-shrink: 0;
     }
@@ -72,7 +72,7 @@
       color: #FFFFFF !important;
     }
 
-    /* 一般天氣圖示 */
+    /* 天氣圖示 */
     .weather-icon {
       width: 44px;
       height: 44px;
@@ -82,7 +82,7 @@
       flex-shrink: 0;
     }
 
-    /* 警告圖示容器：增減警告時自動隨同主體向兩側平分留白 */
+    /* 警告圖示容器 */
     .warning-container {
       display: inline-flex;
       align-items: center;
