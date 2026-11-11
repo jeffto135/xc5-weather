@@ -14,37 +14,46 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       display: flex;
       align-items: center;
+      justify-content: center;
     }
 
-    /* 鎖死高 55px、寬 1080px 滿版 */
+    /* 鎖死高 55px、寬 1080px，內部所有物件絕對居中對齊 */
     .bar {
       width: 1080px;
       height: 55px;
       line-height: 55px;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: center; /* 關鍵：永遠保持左右空白對稱 */
       background: rgba(0, 0, 0, 0.75);
       font-size: 30px;
       font-weight: 700;
       white-space: nowrap;
       color: #FFFFFF !important;
+      padding: 0 10px;
     }
 
-    /* 跳秒即時時間（亮綠色） */
+    /* 時間欄位鎖定固定寬度 145px，秒數變化時原地跳動，不影響外部居中位置 */
     .time {
+      display: inline-block;
+      width: 145px;
+      text-align: center;
       color: #38ef7d !important;
       font-size: 34px;
       font-weight: 800;
       font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
       margin-right: 14px;
+      flex-shrink: 0;
     }
 
-    /* 英文日期格式 (純白) */
+    /* 英文日期 (純白) */
     .date {
+      display: inline-block;
       color: #FFFFFF !important;
       margin-right: 16px;
       font-weight: 600;
+      flex-shrink: 0;
     }
 
     /* 溫濕度 */
@@ -55,27 +64,31 @@
       margin-right: 14px;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      flex-shrink: 0;
     }
 
     .weather-item span {
       color: #FFFFFF !important;
     }
 
-    /* 天氣圖示 */
+    /* 一般天氣圖示 */
     .weather-icon {
       width: 44px;
       height: 44px;
       vertical-align: middle;
-      margin-left: 4px;
+      margin-left: 2px;
       object-fit: contain;
+      flex-shrink: 0;
     }
 
-    /* 警告圖示容器 */
+    /* 警告圖示容器：增減警告時自動隨同主體向兩側平分留白 */
     .warning-container {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      margin-left: 6px;
+      margin-left: 8px;
+      flex-shrink: 0;
     }
 
     .warning-icon {
@@ -119,7 +132,6 @@
       const day = now.getDate();
       const dayStr = DAYS[now.getDay()];
       
-      // 英文顯示格式：11 Nov 2026 (Wed)
       document.getElementById('date').innerText = day + ' ' + monthStr + ' ' + year + ' (' + dayStr + ')';
     }
 
@@ -128,7 +140,6 @@
     async function fetchWeather() {
       try {
         const timestamp = Date.now();
-        // 請求天文台英文版 API
         const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=en&_t=' + timestamp, {
           cache: 'no-store'
         });
@@ -177,25 +188,21 @@
 
         const warningFiles = [];
 
-        // 1. 強烈季候風信號 (WMSGNL)
         if (warnData.WMSGNL || warnData.WMS || warnData.SMS || warnData.WTMW) {
           warningFiles.push('sms.png');
         }
 
-        // 2. 火災危險警告 (WFIRE)
         if (warnData.WFIRE) {
           const fireCode = (warnData.WFIRE.code || '').toUpperCase();
           if (fireCode === 'WFIRER') warningFiles.push('firer.png');
           else warningFiles.push('firey.png');
         }
 
-        // 3. 熱帶氣旋警告
         if (warnData.WTCSGNL) {
           const tcCode = (warnData.WTCSGNL.code || '').toLowerCase();
           if (tcCode) warningFiles.push(tcCode + '.png');
         }
 
-        // 4. 暴雨警告
         if (warnData.WRAIN) {
           const rainCode = (warnData.WRAIN.code || '').toUpperCase();
           if (rainCode === 'WRAINB') warningFiles.push('rainb.png');
@@ -203,23 +210,12 @@
           else warningFiles.push('raina.png');
         }
 
-        // 5. 雷暴警告
         if (warnData.WTHDR) warningFiles.push('ts.png');
-
-        // 6. 酷熱 / 寒冷
         if (warnData.VHOT) warningFiles.push('vhot.png');
         if (warnData.COLD) warningFiles.push('cold.png');
-
-        // 7. 霜凍警告
         if (warnData.WFROST) warningFiles.push('frost.png');
-
-        // 8. 山泥傾瀉警告
         if (warnData.WLANDSLIP) warningFiles.push('landslip.png');
-
-        // 9. 新界北部水浸特別報告
         if (warnData.WFNTSA) warningFiles.push('ntfl.png');
-
-        // 10. 海嘯警告
         if (warnData.WTSUNAMI) warningFiles.push('tsunami-warn.png');
 
         const uniqueFiles = [...new Set(warningFiles)];
