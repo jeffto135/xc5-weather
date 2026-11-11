@@ -11,7 +11,7 @@
       height: 100vh;
       background: transparent;
       overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "PingFang HK", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       display: flex;
       align-items: center;
     }
@@ -25,13 +25,13 @@
       align-items: center;
       justify-content: center;
       background: rgba(0, 0, 0, 0.75);
-      font-size: 32px;
+      font-size: 30px;
       font-weight: 700;
       white-space: nowrap;
-      color: #FFFFFF !important; /* 確保全局文字預設為純白色 */
+      color: #FFFFFF !important;
     }
 
-    /* 跳秒即時時間（醒目亮綠色） */
+    /* 跳秒即時時間（亮綠色） */
     .time {
       color: #38ef7d !important;
       font-size: 34px;
@@ -40,14 +40,14 @@
       margin-right: 14px;
     }
 
-    /* 年月日星期（純白） */
+    /* 英文日期格式 (純白) */
     .date {
       color: #FFFFFF !important;
       margin-right: 16px;
       font-weight: 600;
     }
 
-    /* 關鍵修復：溫濕度強制鎖死為高亮純白色 */
+    /* 溫濕度 */
     .weather-item {
       display: inline-flex;
       align-items: center;
@@ -61,7 +61,7 @@
       color: #FFFFFF !important;
     }
 
-    /* 一般天氣圖示（44px，垂直居中） */
+    /* 天氣圖示 */
     .weather-icon {
       width: 44px;
       height: 44px;
@@ -70,7 +70,7 @@
       object-fit: contain;
     }
 
-    /* 警告圖示容器（雙警告並排） */
+    /* 警告圖示容器 */
     .warning-container {
       display: inline-flex;
       align-items: center;
@@ -90,7 +90,7 @@
 <body>
   <div class="bar">
     <span id="time" class="time">--:--:--</span>
-    <span id="date" class="date">----年--月--日 (--)</span>
+    <span id="date" class="date">-- --- ---- (---)</span>
     <span class="weather-item"><span id="temp">--</span>&#176;C</span>
     <span class="weather-item"><span id="humidity">--</span>%</span>
     
@@ -104,6 +104,9 @@
   <script>
     const FALLBACK_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='26' cy='26' r='12' fill='%23FFA500'/%3E%3Cpath d='M46 44a10 10 0 0 0-1.8-19.8 14 14 0 0 0-26.4 5.8A9 9 0 0 0 18 44h28z' fill='%23FFFFFF' opacity='0.9'/%3E%3C/svg%3E";
 
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
     function updateClock() {
       const now = new Date();
       const h = String(now.getHours()).padStart(2, '0');
@@ -112,10 +115,12 @@
       document.getElementById('time').innerText = h + ':' + m + ':' + s;
 
       const year = now.getFullYear();
-      const month = now.getMonth() + 1;
+      const monthStr = MONTHS[now.getMonth()];
       const day = now.getDate();
-      const dayArr = ['\u65e5', '\u4e00', '\u4e8c', '\u4e09', '\u56db', '\u4e94', '\u516d'];
-      document.getElementById('date').innerText = year + '\u5e74' + month + '\u6708' + day + '\u65e5 (' + dayArr[now.getDay()] + ')';
+      const dayStr = DAYS[now.getDay()];
+      
+      // 英文顯示格式：11 Nov 2026 (Wed)
+      document.getElementById('date').innerText = day + ' ' + monthStr + ' ' + year + ' (' + dayStr + ')';
     }
 
     let weatherSuccess = false;
@@ -123,14 +128,15 @@
     async function fetchWeather() {
       try {
         const timestamp = Date.now();
-        const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc&_t=' + timestamp, {
+        // 請求天文台英文版 API
+        const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=en&_t=' + timestamp, {
           cache: 'no-store'
         });
         if (!res.ok) throw new Error('Weather API error');
         const data = await res.json();
 
         if (data.temperature && data.temperature.data && data.temperature.data.length > 0) {
-          const hko = data.temperature.data.find(d => d.place === '\u9999\u6e2f\u5929\u6587\u53f0') || data.temperature.data[0];
+          const hko = data.temperature.data.find(d => d.place === 'Hong Kong Observatory') || data.temperature.data[0];
           document.getElementById('temp').innerText = hko.value;
         }
 
@@ -158,7 +164,7 @@
     async function fetchWarnings() {
       try {
         const timestamp = Date.now();
-        const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc&_t=' + timestamp, {
+        const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=en&_t=' + timestamp, {
           cache: 'no-store'
         });
         if (!res.ok) throw new Error('Warning API error');
